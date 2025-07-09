@@ -9,9 +9,8 @@ setup(name='d4orm',
         'imageio',
         'tqdm',
         'tyro',
+        'jax',
+        'jaxopt',
         'flax',
-    ],
-    extras_require={
-        'jax': ['jax', 'jaxopt'],
-    }
+    ]
 )
