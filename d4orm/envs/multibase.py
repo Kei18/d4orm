@@ -53,14 +53,14 @@ class MultiBase():
         goal_states = -initial_states
 
         return initial_states, goal_states
-    
+
     def reset(self, rng: jax.Array):
         return State(
             pipeline_state=self.x0,
             reward=jnp.zeros(self.num_agents, dtype=jnp.float32),
             mask=jnp.zeros(self.num_agents, dtype=jnp.float32),
             collision=jnp.zeros(self.num_agents, dtype=jnp.float32))
-    
+
     def reset_conditioned(self, x0: jax.Array, rng: jax.Array):
         return State(
             pipeline_state=x0,
@@ -71,19 +71,19 @@ class MultiBase():
     @partial(jax.jit, static_argnums=(0,))
     def clip_actions(self, traj, factor=1):
         raise NotImplementedError
-    
+
     @partial(jax.jit, static_argnums=(0,))
     def agent_dynamics(self, x, u):
         raise NotImplementedError
-    
+
     def clip_velocity(self, x):
         """x is state for single robot"""
         raise NotImplementedError
-    
+
     def get_current_velocity(self, q):
         """q is joint state for all robots"""
         raise NotImplementedError
-    
+
     @partial(jax.jit, static_argnums=(0,))
     def rk4(self, x, u, dt):
         # k1 = self.agent_dynamics(x, u)
@@ -95,7 +95,7 @@ class MultiBase():
         x_next = x + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
 
         return self.clip_velocity(x_next)
-    
+
     @partial(jax.jit, static_argnums=(0,))
     def rollout(self,
                 state: State,
@@ -117,7 +117,7 @@ class MultiBase():
         _, (rews, pipline_states, masks, collisions) = jax.lax.scan(step_wrapper, state, us)
 
         rews = rews.mean(axis=0)
-        
+
         return rews, pipline_states, masks, collisions
 
     @partial(jax.jit, static_argnums=(0,))
@@ -136,9 +136,9 @@ class MultiBase():
         goals = xg.reshape(self.num_agents, -1)
 
         # Get new q
-        q_new = jax.vmap(lambda agent_state, agent_action: 
+        q_new = jax.vmap(lambda agent_state, agent_action:
                          self.rk4(agent_state, agent_action, dt))(q, actions)
-        
+
         # Don't update for stopped state
         previously_stopped_mask = jnp.broadcast_to(state.mask, (self.num_agents,)).astype(bool)
         q_new = jnp.where(use_mask,
@@ -206,17 +206,17 @@ class MultiBase():
     @property
     def observation_size(self):
         return self.obsv_dim_agent * self.num_agents
-    
+
     def get_heading_line(self, state, position, agent_idx):
         return [], []
-    
+
     def get_color(self, i, colormaps):
         return cm.get_cmap(colormaps[i % len(colormaps)])
 
     def render_gif(self, xs: jnp.ndarray, gif_output_path, trajectory_image_path, ids=None):
         # Reshape trajectory for rendering
         xs = xs.reshape(-1, self.num_agents, self.obsv_dim_agent)
-        
+
         # --- Initialize GIF Rendering ---
         fig, ax = plt.subplots(constrained_layout=True)
         ax.set(xlim=(-self.lim, self.lim), ylim=(-self.lim, self.lim), aspect="equal")
