@@ -10,6 +10,7 @@ setup(name='d4orm',
         'tqdm',
         'tyro',
         'jax',
-        'jaxopt'
+        'jaxopt',
+        'flax',
         ]
 )
